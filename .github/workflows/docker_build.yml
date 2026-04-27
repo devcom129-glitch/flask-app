@@ -27,26 +27,27 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
       - name: Run tests
-        run: python -m pytest tests
+        run: pytest
 
   # This workflow contains a single job called "build"
   build:
     needs: test
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
-
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - uses: actions/checkout@v4
-      # Runs a single command using the runners shell
+    - uses: actions/checkout@v4
+    
+    
+    - name: Set up Docker Buildx
+      uses: docker/setup-buildx-action@v3
+    
+    - name: Login to Docker Hub
+      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
+    
+    - name: Build and push image 
+      run: |
+        docker buildx build \
+          --tag ${{ secrets.DOCKER_USERNAME }}/flaskapp:latest \
+          --tag ${{ secrets.DOCKER_USERNAME }}/flaskapp:${{ github.sha }} \
+          --push .
 
-      - name: Login to Docker Hub
-        run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-      - name: Build and push image 
-        run: | 
-          docker buildx build \ 
-            --tag ${{ secrets.DOCKER_USERNAME }}/flaskapp:latest \ 
-            --tag ${{ secrets.DOCKER_USERNAME }}/flaskapp:${{ github.sha }} \ 
-            --push .
